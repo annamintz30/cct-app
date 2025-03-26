@@ -170,3 +170,25 @@ function getDropdownOptions() {
 
   return options;
 }
+
+// ============================
+// 3. Data Handlers
+// ============================
+function employeesTab() {
+  return HtmlService.createHtmlOutputFromFile('EmployeeDatabase').getContent();
+}
+
+function sopsTab() {
+  return HtmlService.createHtmlOutputFromFile('SOPs').getContent();
+}
+
+function trainingTab() {
+  return HtmlService.createHtmlOutputFromFile('Training').getContent();
+}
+
+
+
+
+
+
+
