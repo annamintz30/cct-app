@@ -1,0 +1,88 @@
+
+/**Reusable animated ellipsis function (for loading screens)
+ * Starts a dot animation (e.g. "Saving." → "Saving.." → "Saving...") on an element.
+ * Supports textContent or input placeholder.
+ * @param {HTMLElement} element - The element to animate.
+ * @param {string} baseText - Optional base label (e.g. "Loading", "Saving").
+ */
+const ellipsisIntervals = new Map();
+
+function startEllipsisAnimation(element, baseText = "") {
+  let dotCount = 1;
+
+  const isInput = element.tagName === "INPUT";
+  if (!isInput && baseText) element.textContent = `${baseText}.`;
+
+  const interval = setInterval(() => {
+    dotCount = (dotCount % 3) + 1;
+    const dots = '.'.repeat(dotCount);
+
+    if (isInput) {
+      element.placeholder = `${baseText}${dots}`;
+    } else {
+      element.textContent = baseText ? `${baseText}${dots}` : `${dots}`;
+    }
+  }, 500);
+
+  ellipsisIntervals.set(element, interval);
+}
+
+/**
+  * Stops the dot animation and clears text/placeholder.
+  * @param {HTMLElement} element - the element to stop animating.
+  */
+function stopEllipsisAnimation(element) {
+  const intervalId = ellipsisIntervals.get(element);
+  if (intervalId) {
+    clearInterval(intervalId);
+    ellipsisIntervals.delete(element);
+  }
+
+  if (element.tagName === "INPUT") {
+    element.placeholder = "";
+  } else {
+    element.textContent = "";
+  }
+}
+
+function myUtility(){
+  console.log("Utilities loaded correctly!");
+}
+
+let dropdownOptions = {};
+
+function loadDropdownOptions() {
+  console.log("📥 loadDropdownOptions() called");
+  google.script.run
+    .withSuccessHandler(data => {
+      dropdownOptions = {};
+      for (const key in data) {
+        if (data.hasOwnProperty(key)) {
+          const normalizedKey = key.replace(/\s+/g, '').toLowerCase();
+          dropdownOptions[normalizedKey] = data[key];
+        }
+      }
+      console.log("🎯 Normalized Dropdown Options:", dropdownOptions);
+    })
+    .withFailureHandler(error => {
+      console.error("❌ Error loading dropdown options:", error);
+    })
+    .getDropdownOptions();
+}
+
+function parseRequiredRule(ruleString) {
+  const result = { required: false, exception: null };
+
+  const match = ruleString.match(/required\((.*?)\)/);
+  if (match) {
+    result.required = true;
+
+    const condition = match[1];
+    if (condition.startsWith('-')) {
+      const [column, value] = condition.slice(1).split('/');
+      result.exception = { column: column.trim(), value: value.trim() };
+    }
+  }
+
+  return result;
+}

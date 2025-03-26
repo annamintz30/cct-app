@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+  </head>
+  <body>
+                             <!-- ===================== EMPLOYEE DATABASE MAIN PAGE HTML ===================== -->
+    <div id="employeesTab" class="big-box">
+      <div class="medium-box">
+        <div class="generic-separator"></div>
+        <div class="empldb-header">
+          <div class="empldb-title">
+            Employee Database
+          </div>
+        </div>
+        <div class="generic-separator"></div>
+        <div class="dbMenu">
+          <div class="search-bar-container">
+            <div class="search-group">
+              <label for="employeeSearch">🔍Search:</label>
+              <input id="employeeSearch" type="text" placeholder="Enter name, title, or ID" onkeyup="filterEmployees()">
+            </div>
+            <div class="inactive-toggle">
+              <input type="checkbox" id="showInactive" onchange="applyFilters()">
+              <label for="showInactive">Display Inactive</label>
+            </div>
+          </div>
+          <div class="addBtn-container">
+            <button class="addEmpl-butt" id="addEmployeeBtn">Add New Employee</button>
+          </div>
+        </div>
+        <div class="generic-separator"></div>
+        <div class="table-container">
+          <div id="loadingSpinner" class="loading hidden">Loading<span id="dots">.</span>
+          </div>
+          <table>
+            <thead>
+              <tr id="tableHeader"></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>    
+    </div>
+                          <!-- ===================== EMPLOYEE DATABASE SCRIPTS ===================== -->
+    <script>
+      let headers = [];
+      let properties = []; 
+
+      function loadSheetData() {
+        document.getElementById("addEmployeeBtn").disabled = true; // ✅ Safely here
+        document.getElementById("addEmployeeBtn").classList.add("disabled-button"); // optional
+
+        const loadingSpinner = document.getElementById("loadingSpinner");
+        loadingSpinner.classList.remove("hidden");
+        startEllipsisAnimation(loadingSpinner, "Loading");
+        
+        toggleEditButtons(false); // 🔒 disable during load
+
+        google.script.run
+          .withSuccessHandler(result => {
+            try {
+              const parsed = JSON.parse(result);
+              console.log("✅ Data received:", parsed);
+
+              headers = parsed.headers;
+              properties = parsed.properties;
+
+              renderTableFromObjects(parsed.data, headers, properties);
+
+              toggleEditButtons(true); // 🔓 enable when done loading
+
+              const addBtn = document.getElementById("addEmployeeBtn");
+              addBtn.disabled = false;
+              addBtn.classList.remove("disabled-button");
+              addBtn.onclick = () => openEditModal({}, headers, properties, "add");
+
+            } catch (e) {
+              console.error("❌ JSON Parse Error:", e);
+            } finally {
+              loadingSpinner.classList.add("hidden");
+              stopEllipsisAnimation(loadingSpinner);
+            }
+          })
+          .withFailureHandler(err => {
+            console.error("❌ Apps Script Error:", err);
+            loadingSpinner.classList.add("hidden");
+            stopEllipsisAnimation(loadingSpinner);
+          })
+          .getSheetData();
+      }
+
+      function renderTableFromObjects(data, headers, properties) {
+        const headerRow = document.getElementById("tableHeader");
+        const body = document.getElementById("tableBody");
+        headerRow.innerHTML = "";
+        body.innerHTML = "";
+
+        const editTh = document.createElement("th");
+        editTh.textContent = "";
+        headerRow.appendChild(editTh);
+
+        headers.forEach((header, i) => {
+          const th = document.createElement("th");
+          const prop = properties[i] || "text";
+
+          const hasDropdown = prop.includes("dropdown");
+          const hasSort = prop.includes("sort");
+
+          const wrapper = document.createElement("div");
+          wrapper.style.display = "flex";
+          wrapper.style.alignItems = "center";
+          wrapper.style.justifyContent = "space-between";
+          wrapper.style.gap = "4px";
+          wrapper.style.width = "100%";
+
+          if (hasDropdown) {
+            const dropdownKey = header.replace(/\s+/g, '').toLowerCase();
+            const options = dropdownOptions[dropdownKey] || [];
+
+            const select = document.createElement("select");
+            select.className = "header-dropdown";
+            select.dataset.header = header;
+            select.innerHTML = `<option value="">${header}</option>`;
+
+            options.forEach(option => {
+              const opt = document.createElement("option");
+              opt.value = option;
+              opt.textContent = option;
+              select.appendChild(opt);
+            });
+
+            select.onchange = applyFilters;
+            wrapper.appendChild(select);
+
+            // Add dropdown image ONLY if it's NOT also a sort column
+            if (!hasSort) {
+              const dropdownImg = document.createElement("img");
+              dropdownImg.src = "https://github.com/annamintz30/CCTycoon/blob/main/assets/images/downarrow.png?raw=true";
+              dropdownImg.alt = "▼";
+              dropdownImg.style.width = "10px";
+              dropdownImg.style.height = "10px";
+              wrapper.appendChild(dropdownImg);
+            }
+          } else {
+            const span = document.createElement("span");
+            span.textContent = header;
+            wrapper.appendChild(span);
+          }
+
+          if (hasSort) {
+            const sortImg = document.createElement("img");
+            sortImg.src = "https://github.com/annamintz30/CCTycoon/blob/main/assets/images/updownarrows.png?raw=true";
+            sortImg.alt = "⇅";
+            sortImg.style.width = "12px";
+            sortImg.style.height = "12px";
+            sortImg.style.cursor = "pointer";
+
+            let sortDirection = "asc";
+            sortImg.onclick = () => {
+              sortTableByColumn(i + 1, sortDirection, prop);
+              sortDirection = sortDirection === "asc" ? "desc" : "asc";
+            };
+
+            wrapper.appendChild(sortImg);
+          }
+
+          th.appendChild(wrapper);
+          prop.split(" ").forEach(cls => th.classList.add(cls));
+          headerRow.appendChild(th);
+        });
+
+        data.forEach((row, rowIndex) => {
+          row._rowIndex = rowIndex + 3; // Adjust for header and properties rows
+          const tr = document.createElement("tr");
+          if (row["Status"] && row["Status"].toLowerCase() !== "active") {
+            tr.classList.add("inactive-row");
+          }
+
+          const editTd = document.createElement("td");
+          const editBtn = document.createElement("button");
+          editBtn.textContent = "Edit";
+          editBtn.className = "edit-btn";
+          editBtn.onclick = () => openEditModal(row, headers, properties, "edit");
+          editTd.appendChild(editBtn);
+          tr.appendChild(editTd);
+
+          headers.forEach((header, i) => {
+            const td = document.createElement("td");
+            let value = row[header];
+            const prop = properties[i] || "text";
+
+            if (prop.includes("wage") && !isNaN(value)) {
+              td.textContent = `$${parseFloat(value).toFixed(2)}`;
+            } else if (prop.includes("date") && value) {
+              const dateObj = new Date(value);
+              td.textContent = isNaN(dateObj.getTime())
+                ? value
+                : `${dateObj.getMonth() + 1}-${dateObj.getDate()}-${dateObj.getFullYear()}`;
+            } else {
+              td.textContent = value ?? "";
+            }
+
+            prop.split(" ").forEach(cls => td.classList.add(cls));
+            tr.appendChild(td);
+          });
+
+          body.appendChild(tr);
+        });
+
+        applyFilters();
+      }
+
+      function toggleEditButtons(enabled) {
+        const editButtons = document.querySelectorAll(".edit-btn");
+        editButtons.forEach(btn => {
+          btn.disabled = !enabled;
+        });
+      }
+
+      function applySearchFilter(rows) {
+        const query = document.getElementById("employeeSearch").value.trim().toLowerCase();
+        if (!query) return rows;
+
+        return rows.filter(row => {
+          return Array.from(row.querySelectorAll("td")).some(cell =>
+            cell.textContent.toLowerCase().includes(query)
+          );
+        });
+      }
+
+      var hasAutoCheckedInactive = window.hasAutoCheckedInactive ?? false;
+
+      function applyFilters() {
+        const allRows = Array.from(document.querySelectorAll("#tableBody tr"));
+        let filtered = allRows;
+
+        filtered = applyDropdownHeaderFilters(filtered); // now correctly manages checkbox
+        filtered = applySearchFilter(filtered);
+        filtered = applyInactiveToggle(filtered); // filters inactive last based on checkbox
+
+        updateTableVisibility(filtered);
+        updateStatusHeaderHighlight();
+      }
+
+      function updateStatusHeaderHighlight() {
+        const showInactive = document.getElementById("showInactive").checked;
+
+        const statusHeaderTh = Array.from(document.querySelectorAll("#tableHeader th")).find(th => {
+          return th.textContent.trim().toLowerCase() === "status" || 
+                th.querySelector("select")?.dataset.header?.toLowerCase() === "status";
+        });
+
+        const statusDropdown = document.querySelector('.header-dropdown[data-header="Status"]');
+        const isStatusInactive = statusDropdown?.value?.toLowerCase() === "inactive";
+
+        // Remove previous cat if any
+        if (statusHeaderTh) {
+          statusHeaderTh.classList.remove("status-highlight");
+
+          const oldCat = statusHeaderTh.querySelector('.pixel-cat');
+          if (oldCat) oldCat.remove();
+
+          // 🟡 Highlight only if Status = Inactive AND Display Inactive is NOT checked
+          if (isStatusInactive && !showInactive) {
+            statusHeaderTh.classList.add("status-highlight");
+
+            const cat = document.createElement("img");
+            cat.src = "https://i.imgur.com/XEXyOCL.gif"; // Your adorable pixel cat
+            cat.alt = "Pixel Cat";
+            cat.className = "pixel-cat";
+            statusHeaderTh.appendChild(cat);
+          }
+        }
+      }
+
+      function applyDropdownHeaderFilters(rows) {
+        const activeFilters = {};
+        const showInactiveCheckbox = document.getElementById("showInactive");
+
+        let statusDropdownSelectedInactive = false;
+
+        document.querySelectorAll(".header-dropdown").forEach(select => {
+          const value = select.value;
+          if (value) {
+            const rawHeader = select.dataset.header;
+            const normalized = rawHeader.trim().toLowerCase().replace(/\s+/g, '');
+            activeFilters[normalized] = value;
+
+            if (normalized === "status" && value.toLowerCase() === "inactive") {
+              statusDropdownSelectedInactive = true;
+            }
+          }
+        });
+
+        // ✅ Only auto-check the checkbox if 'Inactive' is selected — but don't force it to stay checked
+        if (statusDropdownSelectedInactive && !hasAutoCheckedInactive) {
+          if (!showInactiveCheckbox.checked) {
+            showInactiveCheckbox.checked = true;
+          }
+          hasAutoCheckedInactive = true;
+        }
+
+        if (!statusDropdownSelectedInactive) {
+          hasAutoCheckedInactive = false;
+        }
+
+        console.log("🔍 Active filters:", activeFilters);
+
+        if (Object.keys(activeFilters).length === 0) return rows;
+
+        return rows.filter(row => {
+          const cells = row.querySelectorAll("td");
+          const match = Object.entries(activeFilters).every(([normalizedHeader, value]) => {
+            const index = headers.findIndex(h =>
+              h.trim().toLowerCase().replace(/\s+/g, '') === normalizedHeader
+            );
+
+            if (index === -1) {
+              console.warn(`⚠️ Column not found for header: ${normalizedHeader}`);
+              return true;
+            }
+
+            const cell = cells[index + 1]; // +1 to skip edit button column
+            const cellValue = cell?.textContent.trim();
+
+            return cellValue === value;
+          });
+
+          return match;
+        });
+      }
+
+      function applyInactiveToggle(rows) {
+        const showInactive = document.getElementById("showInactive").checked;
+        if (showInactive) return rows;
+
+        // Use the headers array to find the column index
+        const statusIndex = headers.findIndex(h => h.trim().toLowerCase() === "status");
+
+        if (statusIndex === -1) {
+          console.warn("⚠️ 'Status' column not found via headers.");
+          return rows;
+        }
+
+        return rows.filter(row => {
+          const statusCell = row.querySelectorAll("td")[statusIndex + 1];
+          return statusCell && statusCell.textContent.trim().toLowerCase() === "active";
+        });
+      }
+
+      function updateTableVisibility(rowsToShow) {
+        const allRows = Array.from(document.querySelectorAll("#tableBody tr"));
+
+        allRows.forEach(row => {
+          row.style.display = rowsToShow.includes(row) ? "" : "none";
+        });
+
+        // Reapply alternating colors
+        let visibleRowCount = 0;
+        allRows.forEach((row) => {
+          if (row.style.display !== "none") {
+            row.style.backgroundColor = visibleRowCount % 2 === 0 ? "#c4c3fd" : "#b0affd";
+            visibleRowCount++;
+          }
+        });
+      }
+
+      function filterEmployees() {
+        applyFilters();
+      }
+
+      function sortTableByColumn(columnIndex, direction, type) {
+        const tbody = document.getElementById("tableBody");
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+
+        const getValue = row => {
+          const cell = row.querySelectorAll("td")[columnIndex];
+          const text = cell?.textContent?.trim() ?? "";
+
+          if (type.includes("wage")) {
+            return parseFloat(text.replace(/[^0-9.]/g, "")) || 0;
+          }
+
+          if (type.includes("date")) {
+            const date = new Date(text);
+            return isNaN(date.getTime()) ? 0 : date.getTime();
+          }
+
+          if (!isNaN(text)) return parseFloat(text);
+          return text.toLowerCase();
+        };
+
+        rows.sort((a, b) => {
+          const aVal = getValue(a);
+          const bVal = getValue(b);
+
+          if (aVal < bVal) return direction === "asc" ? -1 : 1;
+          if (aVal > bVal) return direction === "asc" ? 1 : -1;
+          return 0;
+        });
+
+        tbody.innerHTML = "";
+        rows.forEach(row => tbody.appendChild(row));
+      }
+
+    </script>
+  </body>
+</html>
