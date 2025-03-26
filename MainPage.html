@@ -1,81 +1,90 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <base target="_top">
-  </head>
-  <body>
-                                       <!-- ===================== MAIN GUY HTML ===================== -->
-    <div class="header-bar">Main Guy</div>
-      <div class="menu-bar">
-        <button id="btnEmployees" class="menu-butt empldbimg active" data-tab="employeesTab">
-            <img src="https://github.com/annamintz30/CCTycoon/blob/main/assets/images/clowder.png?raw=true">
-            <span>Employee Database</span>
-        </button>
-        <button id="btnSOPs" class="menu-butt sopbookimg" data-tab="sopsTab">
-            <img src="https://github.com/annamintz30/CCTycoon/blob/main/assets/images/SOPbook.png?raw=true">
-            <span>SOPs</span>
-        </button>
-        <button id="btnTraining" class="menu-butt trainingimg" data-tab="trainingTab">
-            <img src="https://github.com/annamintz30/CCTycoon/blob/main/assets/images/training.png?raw=true">
-            <span>Training</span>
-        </button>
-      </div>
-    </div>
-                                    
-                                    <!-- ===================== MAIN GUY SCRIPTS ===================== -->
-    <script>
-      window.onload = function () {
-        myUtility();
+<head>
+  <base target="_top">
+  <style>
+  <?!= include('styles'); ?>
+  </style>
+</head>
+<body>
 
-        google.script.run
-          .withSuccessHandler(data => {
-            dropdownOptions = {};
-            for (const key in data) {
-              const normalizedKey = key.replace(/\s+/g, '').toLowerCase();
-              dropdownOptions[normalizedKey] = data[key];
-            }
-            console.log("🎯 Dropdown Options loaded:", dropdownOptions);
+  <!-- Header -->
+  <div class="header-bar">Main Guy</div>
 
-            // ✅ Now load the sheet data AFTER options are ready
-            loadSheetData();
-          })
-          .withFailureHandler(error => {
-            console.error("❌ Error loading dropdown options:", error);
-          })
-          .getDropdownOptions();
-      }; 
+  <!-- Menu Bar -->
+  <div class="menu-bar">
+    <button class="menu-butt empldbimg active" data-tab="employeesTab">
+      <img src="https://github.com/annamintz30/CCTycoon/blob/main/assets/images/clowder.png?raw=true">
+      <span>Employee Database</span>
+    </button>
+    <button class="menu-butt sopbookimg" data-tab="sopsTab">
+      <img src="https://github.com/annamintz30/CCTycoon/blob/main/assets/images/SOPbook.png?raw=true">
+      <span>SOPs</span>
+    </button>
+    <button class="menu-butt trainingimg" data-tab="trainingTab">
+      <img src="https://github.com/annamintz30/CCTycoon/blob/main/assets/images/training.png?raw=true">
+      <span>Training</span>
+    </button>
+  </div>
 
-      document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll(".menu-butt").forEach(button => {
-          button.addEventListener("click", function() {
-            setActiveMenuButton(this.id);
+  <!-- Content Area -->
+  <div id="module-content"></div>
 
-            // Load and show the associated tab/content
-            const tabId = this.getAttribute("data-tab");
-            showActiveTab(tabId);
-          });
+  <!-- Include utilities -->
+  <script>
+  <?!= include('Utilities'); ?>
+  </script>
+
+  <script>
+    let currentTab = null;
+
+    document.addEventListener('DOMContentLoaded', function () {
+      // Load dropdown options first
+      loadDropdownOptions();
+
+      // Set up tab button listeners
+      document.querySelectorAll('.menu-butt').forEach(button => {
+        button.addEventListener('click', function () {
+          const tabId = this.getAttribute('data-tab');
+
+          if (currentTab === tabId) {
+            // If the same tab is clicked again, clear the module content
+            document.getElementById('module-content').innerHTML = '';
+            currentTab = null;
+            setActiveTab(null);
+          } else {
+            setActiveTab(this);
+            loadTabContent(tabId);
+            currentTab = tabId;
+          }
         });
-
-        // Sets the clicked button as active
-        function setActiveMenuButton(activeBtnId) {
-          document.querySelectorAll(".menu-butt").forEach(btn => {
-            btn.classList.toggle("active", btn.id === activeBtnId);
-          });
-        }
-
-        // Shows the clicked tab and hides others
-        function showActiveTab(activeTabId) {
-          document.querySelectorAll(".tab-content").forEach(tab => {
-            tab.style.display = (tab.id === activeTabId) ? "block" : "none";
-          });
-        }
-
-        // Optionally set initial active tab on page load
-        window.onload = function() {
-          setActiveMenuButton("btnEmployees"); // Default active button
-          showActiveTab("employeesTab");       // Default active tab
-        };
       });
-    </script>
-  </body>
+
+      // Load default tab (Employee Database)
+      loadTabContent('employeesTab');
+      currentTab = 'employeesTab';
+    });
+
+    function setActiveTab(activeButton) {
+      document.querySelectorAll('.menu-butt').forEach(button => {
+        button.classList.remove('active');
+      });
+      if (activeButton) {
+        activeButton.classList.add('active');
+      }
+    }
+
+    function loadTabContent(tabId) {
+      google.script.run.withSuccessHandler(function (html) {
+        document.getElementById('module-content').innerHTML = html;
+
+        // Call module setup function if it exists
+        if (typeof loadSheetData === 'function') {
+          loadSheetData();
+        }
+      })[tabId]();
+    }
+  </script>
+
+</body>
 </html>
