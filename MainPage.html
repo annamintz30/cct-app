@@ -45,36 +45,37 @@
           .getDropdownOptions();
       }; 
 
-      document.querySelectorAll(".menu-butt").forEach(button => {
-        button.addEventListener("click", function() {
-          setActiveMenuButton(this.id);
+      document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll(".menu-butt").forEach(button => {
+          button.addEventListener("click", function() {
+            setActiveMenuButton(this.id);
 
-          // Load and show the associated tab/content
-          const tabId = this.getAttribute("data-tab");
-          showActiveTab(tabId);
+            // Load and show the associated tab/content
+            const tabId = this.getAttribute("data-tab");
+            showActiveTab(tabId);
+          });
         });
+
+        // Sets the clicked button as active
+        function setActiveMenuButton(activeBtnId) {
+          document.querySelectorAll(".menu-butt").forEach(btn => {
+            btn.classList.toggle("active", btn.id === activeBtnId);
+          });
+        }
+
+        // Shows the clicked tab and hides others
+        function showActiveTab(activeTabId) {
+          document.querySelectorAll(".tab-content").forEach(tab => {
+            tab.style.display = (tab.id === activeTabId) ? "block" : "none";
+          });
+        }
+
+        // Optionally set initial active tab on page load
+        window.onload = function() {
+          setActiveMenuButton("btnEmployees"); // Default active button
+          showActiveTab("employeesTab");       // Default active tab
+        };
       });
-
-      // Sets the clicked button as active
-      function setActiveMenuButton(activeBtnId) {
-        document.querySelectorAll(".menu-butt").forEach(btn => {
-          btn.classList.toggle("active", btn.id === activeBtnId);
-        });
-      }
-
-      // Shows the clicked tab and hides others
-      function showActiveTab(activeTabId) {
-        document.querySelectorAll(".tab-content").forEach(tab => {
-          tab.style.display = (tab.id === activeTabId) ? "block" : "none";
-        });
-      }
-
-      // Optionally set initial active tab on page load
-      window.onload = function() {
-        setActiveMenuButton("btnEmployees"); // Default active button
-        showActiveTab("employeesTab");       // Default active tab
-      };
-
     </script>
   </body>
 </html>
