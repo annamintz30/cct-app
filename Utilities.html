@@ -1,10 +1,12 @@
-
+<script>
 /**Reusable animated ellipsis function (for loading screens)
  * Starts a dot animation (e.g. "Saving." → "Saving.." → "Saving...") on an element.
  * Supports textContent or input placeholder.
  * @param {HTMLElement} element - The element to animate.
  * @param {string} baseText - Optional base label (e.g. "Loading", "Saving").
  */
+
+ 
 const ellipsisIntervals = new Map();
 
 function startEllipsisAnimation(element, baseText = "") {
@@ -86,3 +88,6 @@ function parseRequiredRule(ruleString) {
 
   return result;
 }
+</script>
+
+
