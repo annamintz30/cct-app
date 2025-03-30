@@ -54,6 +54,8 @@ function myUtility(){
 let dropdownOptions = {};
 
 function loadDropdownOptions() {
+  alert("Dropdown JS is loaded!");
+
   console.log("📥 loadDropdownOptions() called");
   google.script.run
     .withSuccessHandler(data => {
