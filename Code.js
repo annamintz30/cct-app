@@ -17,13 +17,15 @@ const DATA_START_ROW_INDEX = 3;
 //    doPost(e)
 // ============================
 
-function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+function doGet() {
+  return HtmlService.createTemplateFromFile('Index')
+    .evaluate()
+    .setTitle("CCT App")
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL); // or SAMEORIGIN if preferred
 }
 
-function doGet(e) {
-    const template = HtmlService.createTemplateFromFile('Index');
-    return template.evaluate().setTitle("Main Guy");
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
 function loadPartial(filename) {

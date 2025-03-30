@@ -1,43 +1,14 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8"> 
-  <meta name="viewport" content="width=device-width">
-  <title>CCT</title>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Include Global Utilities -->
-  <?!= include('Utilities') ?>
-
-  <style>
-  //<!-- Include all Styles -->
-  <?!= include('styles') ?>
-
-  //<!-- Fonts and additional global styles -->
-    @font-face {
-      font-family: 'SFPixelate';
-      src: url('https://annamintz30.github.io/CCTycoon/assets/fonts/SFPixelate.ttf') format('truetype');
-    }
-  </style>
-
-</head>
-
-<body>
-  <?!= include('MainPage') ?>
-  <?!= include('EmployeeDatabase') ?>
-  <?!= include('EmployeeModal') ?>
-
-</body>
-
+    <?!= include('styles'); ?>
+    <?!= include('Utilities'); ?>
+  </head>
+  <body>
+    <?!= include('MainPage'); ?>
+  </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
