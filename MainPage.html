@@ -1,86 +1,73 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <base target="_top">
-  <?!= include('styles'); ?>
-</head>
-<body>
+<!-- Header -->
+<div class="header-bar">Main Guy</div>
 
-  <!-- Header -->
-  <div class="header-bar">Main Guy</div>
+<!-- Menu Bar -->
+<div class="menu-bar">
+  <button class="menu-butt empldbimg active" data-tab="employeesTab">
+    <img src="https://github.com/annamintz30/CCTycoon/blob/main/assets/images/clowder.png?raw=true">
+    <span>Employee Database</span>
+  </button>
+  <button class="menu-butt sopbookimg" data-tab="sopsTab">
+    <img src="https://github.com/annamintz30/CCTycoon/blob/main/assets/images/SOPbook.png?raw=true">
+    <span>SOPs</span>
+  </button>
+  <button class="menu-butt trainingimg" data-tab="trainingTab">
+    <img src="https://github.com/annamintz30/CCTycoon/blob/main/assets/images/training.png?raw=true">
+    <span>Training</span>
+  </button>
+</div>
 
-  <!-- Menu Bar -->
-  <div class="menu-bar">
-    <button class="menu-butt empldbimg active" data-tab="employeesTab">
-      <img src="https://github.com/annamintz30/CCTycoon/blob/main/assets/images/clowder.png?raw=true">
-      <span>Employee Database</span>
-    </button>
-    <button class="menu-butt sopbookimg" data-tab="sopsTab">
-      <img src="https://github.com/annamintz30/CCTycoon/blob/main/assets/images/SOPbook.png?raw=true">
-      <span>SOPs</span>
-    </button>
-    <button class="menu-butt trainingimg" data-tab="trainingTab">
-      <img src="https://github.com/annamintz30/CCTycoon/blob/main/assets/images/training.png?raw=true">
-      <span>Training</span>
-    </button>
-  </div>
+<!-- Content Area -->
+<div id="module-content"></div>
 
-  <!-- Content Area -->
-  <div id="module-content"></div>
+<script>
+  let currentTab = null;
 
-  <!-- Include utilities -->
-  <?!= include('Utilities'); ?>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Load dropdown options first
+    loadDropdownOptions();
 
-  <script>
-    let currentTab = null;
+    // Set up tab button listeners
+    document.querySelectorAll('.menu-butt').forEach(button => {
+      button.addEventListener('click', function () {
+        const tabId = this.getAttribute('data-tab');
 
-    document.addEventListener('DOMContentLoaded', function () {
-      // Load dropdown options first
-      loadDropdownOptions();
-
-      // Set up tab button listeners
-      document.querySelectorAll('.menu-butt').forEach(button => {
-        button.addEventListener('click', function () {
-          const tabId = this.getAttribute('data-tab');
-
-          if (currentTab === tabId) {
-            // If the same tab is clicked again, clear the module content
-            document.getElementById('module-content').innerHTML = '';
-            currentTab = null;
-            setActiveTab(null);
-          } else {
-            setActiveTab(this);
-            loadTabContent(tabId);
-            currentTab = tabId;
-          }
-        });
+        if (currentTab === tabId) {
+          // If the same tab is clicked again, clear the module content
+          document.getElementById('module-content').innerHTML = '';
+          currentTab = null;
+          setActiveTab(null);
+        } else {
+          setActiveTab(this);
+          loadTabContent(tabId);
+          currentTab = tabId;
+        }
       });
-
-      // Load default tab (Employee Database)
-      loadTabContent('employeesTab');
-      currentTab = 'employeesTab';
     });
 
-    function setActiveTab(activeButton) {
-      document.querySelectorAll('.menu-butt').forEach(button => {
-        button.classList.remove('active');
-      });
-      if (activeButton) {
-        activeButton.classList.add('active');
+    // Load default tab (Employee Database)
+    loadTabContent('employeesTab');
+    currentTab = 'employeesTab';
+  });
+
+  function setActiveTab(activeButton) {
+    document.querySelectorAll('.menu-butt').forEach(button => {
+      button.classList.remove('active');
+    });
+    if (activeButton) {
+      activeButton.classList.add('active');
+    }
+  }
+
+  function loadTabContent(tabId) {
+    google.script.run.withSuccessHandler(function (html) {
+      document.getElementById('module-content').innerHTML = html;
+
+      // Call module setup function if it exists
+      if (typeof loadSheetData === 'function') {
+        loadSheetData();
       }
-    }
+    })[tabId]();
+  }
+</script>
 
-    function loadTabContent(tabId) {
-      google.script.run.withSuccessHandler(function (html) {
-        document.getElementById('module-content').innerHTML = html;
-
-        // Call module setup function if it exists
-        if (typeof loadSheetData === 'function') {
-          loadSheetData();
-        }
-      })[tabId]();
-    }
-  </script>
-
-</body>
-</html>

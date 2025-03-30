@@ -1,9 +1,11 @@
+<head><meta charset="UTF-8"></head>
+
 <style>
                                 <!-- ===================== MAIN GUY STYLES ===================== -->
 @font-face {
-      font-family: 'SFPixelate';
-      src: url('https://annamintz30.github.io/CCTycoon/assets/fonts/SFPixelate.ttf') format('truetype');
-    }
+  font-family: 'SFPixelate';
+  src: url('https://annamintz30.github.io/CCTycoon/assets/fonts/SFPixelate.ttf');
+}
 
 body {
   font-family: 'SFPixelate', Arial, sans-serif;
@@ -628,3 +630,13 @@ input.invalid {
 }
 
 </style>
+
+<script>
+  const testFont = new FontFace('SFPixelate', 'url(https://annamintz30.github.io/CCTycoon/assets/fonts/SFPixelate.ttf)');
+  testFont.load().then(function(loadedFont) {
+    document.fonts.add(loadedFont);
+    console.log('✅ Font loaded via JS!');
+  }).catch(function(error) {
+    console.error('❌ Font failed to load:', error);
+  });
+</script>
